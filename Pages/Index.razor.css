@@ -1,0 +1,60 @@
+﻿body {
+}
+.box {
+    width: 500px; /* 横幅を200pxに指定 */
+    height: 605px; /* 縦幅を200pxに指定 */
+    background: #C2A7D8;
+    --font-family: 'Mv Boli';
+    overflow-y: scroll; /* 縦方向にスクロール可能にする */
+}
+#main-container {
+    height: var(--height);
+    width: var(--width);
+    background: #C2A7D8;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.header {
+    display: flex;
+    margin: 5px 5px 10px 5px;
+}
+
+#title {
+    font-size: 24px;
+    text-align: center;
+    height: 24px;
+    margin-right: auto;
+    font-family: 'Mv Boli';
+}
+
+#tasks-number {
+    margin-left: auto;
+    font-size: 24px;
+    height: 24px;
+    font-family: 'Mv Boli';
+}
+#container {
+    display: grid; /* グリッドレイアウト */
+    grid-template-rows: 20px;
+    grid-template-columns: 20px 150px;
+}
+#numId {
+    grid-column: 1 / 2;
+    font-family: 'Mv Boli', serif;
+}
+
+#Name {
+    grid-column: 2 / 3;
+    font-family: 'Mv Boli', serif;
+}
+
+#detail {
+    grid-column: 3 / 4;
+    font-family: 'Mv Boli', serif;
+}
+#task-container {
+    background: #E8D6F3;
+}

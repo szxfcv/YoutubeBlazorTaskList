@@ -1,0 +1,220 @@
+﻿@page "/"
+@inject HttpClient Http
+@using System.Net.Http
+@using System.Text.Json.Nodes;
+@using System.Threading.Tasks;
+
+<PageTitle>Index</PageTitle>
+
+<h1>Wellcome, Task List for Youtube Chat!</h1>
+
+Enter your Youtube Live stream URL.
+<input id="youtubeURL" type="text" @bind="@YoutubeUrl" />
+<font color="red">*It's NOT Yotube Studio URL</font>
+<br />
+Enter your Youtube Data API v3 Key.
+<input id="youtubeURL" type="password" @bind="@key" />
+<br />
+<button @onclick="ButtonClick">OK!</button>
+<div>URL is @InputText</div>
+<div>VideoID is @VideoID</div>
+<div>ChatID is @ChatID</div>
+<br />
+<body>
+    <div class="box">
+        <div id="main-container">
+            <div class="header">
+                <div id="title">!Tasks</div>
+                <div id="tasks-number">@FinishedTaskNum/@AllTaskNum</div>
+            </div>
+            <div class="task-wrapper">
+                <div id="task-container">
+                    @foreach (var person in this.Tasks)
+                    {
+                        <div @key="person.Id">
+                            <div id="container">
+                                @if(person.IsFinish){
+                                        <div id="numId"><s>@person.numId</s></div>
+                                        <div id="Name"><s>@person.Name</s></div>
+                                        <div id="detail"><s>@person.TaskDetail</s></div>
+                                }
+                                else{
+                                    <div id="numId">@person.numId</div>
+                                    <div id="Name">@person.Name</div>
+                                    <div id="detail">@person.TaskDetail</div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+
+@code {
+    string YoutubeUrl;
+    string key = "";
+    string InputText;
+    string VideoID;
+    string ChatID="";
+    static HttpClient client = new HttpClient();
+    string response;
+    string nextPageToken = "";
+    int globalNumId = 0;
+    int AllTaskNum = 0;
+    int FinishedTaskNum = 0;
+
+    async Task ButtonClick()
+    {
+        InputText = YoutubeUrl;
+        VideoID = YoutubeUrl.Replace("https://www.youtube.com/watch?v=", "");
+        try
+        {
+            string request = "https://www.googleapis.com/youtube/v3/videos/?key=" + key + "&id=" + VideoID + "&part=liveStreamingDetails";
+            response = await client.GetStringAsync(request);
+            var node = JsonNode.Parse(response);
+            ChatID = node["items"][0]["liveStreamingDetails"]["activeLiveChatId"].ToString();
+        }
+        catch (HttpRequestException e)
+        {
+            // UNDONE: 通信失敗のエラー処理
+            Console.WriteLine(e.Message);
+        }
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        while (ChatID == "")
+        {
+            await Task.Delay(1000);
+            while (ChatID != "")
+            {
+                await Task.Delay(10000);//sleep 10sec
+                Console.WriteLine("one Loop done");
+                mainloop();
+            }
+        }
+
+    }
+    async Task mainloop(){
+        try
+        {
+            string request = "https://youtube.googleapis.com/youtube/v3/liveChat/messages?liveChatId=" + ChatID + "&part=id&part=snippet&part=authorDetails";
+            if (nextPageToken!=""){
+                request += "&pageToken=" + nextPageToken + "&key=" + key;
+            }
+            else{
+                request += "&key=" + key;
+            }
+            response = await client.GetStringAsync(request);
+            var node = JsonNode.Parse(response);
+            nextPageToken = node["nextPageToken"].ToString();
+            Console.WriteLine("nextPageToken :{0}, Count={1}", nextPageToken,node["items"].AsArray().Count());
+            for(int i=0;i< node["items"].AsArray().Count();i++){
+                string displayName = node["items"][i]["authorDetails"]["displayName"].ToString();
+                string displayMessage = node["items"][i]["snippet"]["displayMessage"].ToString();
+                Console.WriteLine("name {0} : Message {1}", displayName, displayMessage);
+                bool TF = false;
+                // Add Task
+                for (int tadd=0;tadd<addTaskCommands.Length;tadd++){
+                    if (displayMessage.Trim().StartsWith(addTaskCommands[tadd])){
+                        TF = true;
+                    }
+                }
+                if (TF) AddTask(displayMessage,displayName);
+                TF = false;
+                //Remove Task
+                for (int tadd = 0; tadd < deleteTaskCommands.Length; tadd++){
+                    if(displayMessage.Trim().StartsWith(deleteTaskCommands[tadd])){
+                        TF = true;
+                    }
+                }
+                if (TF) RemoveTask(displayMessage, displayName);
+                TF = false;
+                //Finish Task
+                for (int tadd = 0; tadd < finishTaskCommands.Length; tadd++)
+                {
+                    if (displayMessage.Trim().StartsWith(finishTaskCommands[tadd]))
+                    {
+                        TF = true;
+                    }
+                }
+                if (TF) FinishTask(displayMessage, displayName);
+                TF = false;
+
+            }
+        }
+        catch{
+
+        }
+    }
+
+    private class TaskList
+    {
+        public Guid Id;
+        public int numId;
+        public string Name; // 名前
+        public string TaskDetail;
+        public bool IsFinish;
+    }
+    private List<TaskList> Tasks = new List<TaskList>();
+
+    private void AddTask(string dMessage,string dName){
+        string tDetail = string.Join(" ", dMessage.Split().Where((source, index) => index != 0).ToArray());
+        if (!string.IsNullOrEmpty(tDetail)){
+            if (dName.Length > 17) dName = dName.Substring(0, 17);
+            if (tDetail.Length > 30) tDetail = tDetail.Substring(0, 30);
+            this.Tasks.Add(new TaskList { Id = Guid.NewGuid(), Name = dName, TaskDetail = tDetail, IsFinish = false, numId = globalNumId });
+            globalNumId += 1;
+            AllTaskNum += 1;
+            StateHasChanged();
+        }
+
+    }
+    private void RemoveTask(string dMessage, string dName)
+    {
+        string tDetail = string.Join(" ", dMessage.Split().Where((source, index) => index != 0).ToArray());
+        if(!string.IsNullOrEmpty(tDetail)){
+            string[] tDetails = tDetail.Split();
+            int tDetailNum = Int32.Parse(tDetails[0]);
+            for (int j = this.Tasks.Count - 1; j >= 0; j--){
+                if (this.Tasks[j].numId == tDetailNum)
+                {
+                    if (this.Tasks[j].IsFinish) FinishedTaskNum -= 1;
+                    this.Tasks.RemoveAt(j);
+                    AllTaskNum -= 1;
+                }
+            }
+            StateHasChanged();
+        }
+    }
+    private void FinishTask(string dMessage, string dName)
+    {
+        string tDetail = string.Join(" ", dMessage.Split().Where((source, index) => index != 0).ToArray());
+        if (!string.IsNullOrEmpty(tDetail))
+        {
+            string[] tDetails = tDetail.Split();
+            int tDetailNum = Int32.Parse(tDetails[0]);
+            for (int j = this.Tasks.Count - 1; j >= 0; j--)
+            {
+                if (this.Tasks[j].numId == tDetailNum)
+                {
+                    if (this.Tasks[j].IsFinish){
+                        this.Tasks[j].IsFinish = false;
+                        FinishedTaskNum -= 1;
+                    }
+                    else{
+                        this.Tasks[j].IsFinish = true;
+                        FinishedTaskNum += 1;
+                    }
+                    
+                }
+            }
+            StateHasChanged();
+        }
+    }
+
+}
