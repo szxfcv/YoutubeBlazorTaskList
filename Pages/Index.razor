@@ -15,11 +15,33 @@ Enter your Youtube Live stream URL.
 Enter your Youtube Data API v3 Key.
 <input id="youtubeURL" type="password" @bind="@key" />
 <br />
-<button @onclick="ButtonClick">OK!</button>
+<button @onclick="ButtonClick">IKZOOOOO!</button>
 <div>URL is @InputText</div>
 <div>VideoID is @VideoID</div>
 <div>ChatID is @ChatID</div>
 <br />
+
+TaskCommand<br />
+TaskAdd       : "!taska ", "!taskadd ", "!atask ", "!addtask ", "!task ", "!add "<br />
+TaskDelete    : "!taskdel ", "!taskdelete ", "!deltask ", "!deletetask ", "!taskr ", "!taskremove ", "!rtask ", "!removetask ", "!remove ", "!delete "<br />
+TaskFinished  : "!taskf ", "!taskfinish ", "!ftask ", "!finishtask ", "!taskd ", "!taskdone ", "!donetask ", "!dtask ", "!finish ", "!done ", "!finished "
+<br />
+
+Specify an ID for delete and finish
+<br />
+<br />
+example<br />
+!taska pat wife's head<br />
+!taskfinish 1<br />
+!taskdelete 1
+<br />
+<br />
+
+Known Bug
+<br />
+* if you use !taskf, I don't know why but task is added.
+<br />
+list is updated per 10 sec. Please push F12 key and you can see youtube chat in console. <br />
 <body>
     <div class="box">
         <div id="main-container">
@@ -50,6 +72,8 @@ Enter your Youtube Data API v3 Key.
             </div>
         </div>
     </div>
+    <br />
+    <br />
 </body>
 
 
