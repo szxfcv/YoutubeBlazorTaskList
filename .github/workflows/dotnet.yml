@@ -21,9 +21,9 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: Publish
-        run: dotnet publish YoutubeBlazorTaskList/YoutubeBlazorTaskList.csproj -p:GHPages=true -c:Release -o:public
+        run:dotnet publish YoutubeBlazorTaskList/YoutubeBlazorTaskList.csproj -p:GHPages=true -c:Release -o:public
     - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses:peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: public/wwwroot
